@@ -1,4 +1,5 @@
-com\mycompany\projectjava2\PrimaryController.class
-module-info.class
+com\mycompany\projectjava2\model\Book.class
+com\mycompany\projectjava2\database\DBConnection.class
+com\mycompany\projectjava2\database\BookDAO.class
 com\mycompany\projectjava2\App.class
-com\mycompany\projectjava2\SecondaryController.class
+com\mycompany\projectjava2\controller\ViewController.class
