@@ -39,10 +39,7 @@ public class ViewController implements Initializable {
     private TableColumn<?, ?> colAuthor;
     @FXML
     private TableColumn<?, ?> colPrice;
-    @FXML
-    private TextArea chatArea;
-    @FXML
-    private TextField chatInput;
+
     @FXML
     private TextField catField;
     @FXML
@@ -61,17 +58,18 @@ public class ViewController implements Initializable {
      */
     @Override
     public void initialize(URL url, ResourceBundle rb) {
+
         // TODO
         bookTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
         colId.prefWidthProperty().bind(bookTable.widthProperty().multiply(0.08));
-        colTitle.prefWidthProperty().bind(bookTable.widthProperty().multiply(0.32));   
+        colTitle.prefWidthProperty().bind(bookTable.widthProperty().multiply(0.32));
         colcat.prefWidthProperty().bind(bookTable.widthProperty().multiply(0.15));
         colAuthor.prefWidthProperty().bind(bookTable.widthProperty().multiply(0.17));
         colPrice.prefWidthProperty().bind(bookTable.widthProperty().multiply(0.10));
         colQty.prefWidthProperty().bind(bookTable.widthProperty().multiply(0.08));
         colPub.prefWidthProperty().bind(bookTable.widthProperty().multiply(0.10));
-    }    
+    }
 
     @FXML
     private void handleAdd(ActionEvent event) {
@@ -97,8 +95,4 @@ public class ViewController implements Initializable {
     private void handleDelete(ActionEvent event) {
     }
 
-    @FXML
-    private void handleSendAI(ActionEvent event) {
-    }
-    
 }
