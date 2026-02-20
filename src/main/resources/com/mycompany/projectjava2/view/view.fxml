@@ -57,12 +57,12 @@
                     <TableView fx:id="bookTable" VBox.vgrow="ALWAYS">
                         <columns>
                             <TableColumn fx:id="colId" maxWidth="100" minWidth="50" text="ID" />
-                            <TableColumn fx:id="colTitle" minWidth="150" text="Title" />
+                            <TableColumn fx:id="colTitle" minWidth="170" text="Title" />
                             <TableColumn fx:id="colcat" minWidth="120" text="Category" />
                             <TableColumn fx:id="colAuthor" minWidth="120" text="Author" />
                             <TableColumn fx:id="colPrice" maxWidth="120" minWidth="100" text="Price" />
                             <TableColumn fx:id="colQty" maxWidth="120" minWidth="100" text="Quantity" />
-                            <TableColumn fx:id="colPub" minWidth="80" text="Publish year" />
+                            <TableColumn fx:id="colPub" maxWidth="120" minWidth="100" text="Publish year" />
                         </columns>
                     </TableView>
 
