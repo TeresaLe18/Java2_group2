@@ -7,6 +7,7 @@ import com.mycompany.projectjava2.model.Book;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
@@ -193,17 +194,48 @@ public class ViewController implements Initializable {
         if (file != null) {
             try {
                 List<Book> importedBooks = BookFileHandler.importFromCSV(file);
+
+                if (importedBooks.isEmpty()) {
+                    showAlert(Alert.AlertType.WARNING, "Import Warning", "The CSV file contains no data rows.");
+                    return;
+                }
+
                 int successCount = 0;
-                for (Book b : importedBooks) {
+                int skippedCount = 0;
+                StringBuilder errorLog = new StringBuilder();
+
+                for (int i = 0; i < importedBooks.size(); i++) {
+                    Book b = importedBooks.get(i);
+                    int csvRow = i + 2; // +2 because row 1 is header, index is 0-based
+
+                    // Validate each imported book
+                    String bookError = validateBook(b, csvRow);
+                    if (bookError != null) {
+                        skippedCount++;
+                        errorLog.append(bookError).append("\n");
+                        continue;
+                    }
+
                     if (bookDAO.insertBook(b)) {
                         successCount++;
+                    } else {
+                        skippedCount++;
+                        errorLog.append("Row ").append(csvRow).append(": Database insert failed.\n");
                     }
                 }
-                showAlert(Alert.AlertType.INFORMATION, "Import Complete",
-                        "Successfully imported " + successCount + " / " + importedBooks.size() + " books.");
+
+                // Build result message
+                String msg = "Imported: " + successCount + " / " + importedBooks.size() + " books.";
+                if (skippedCount > 0) {
+                    msg += "\nSkipped: " + skippedCount + " (validation errors)";
+                    msg += "\n\nDetails:\n" + errorLog.toString().trim();
+                }
+
+                showAlert(skippedCount > 0 ? Alert.AlertType.WARNING : Alert.AlertType.INFORMATION,
+                        "Import Result", msg);
                 refreshTable();
             } catch (IOException e) {
-                showAlert(Alert.AlertType.ERROR, "Import Error", "Failed to import CSV:\n" + e.getMessage());
+                showAlert(Alert.AlertType.ERROR, "Import Error", "Failed to read CSV file:\n" + e.getMessage());
             }
         }
     }
@@ -256,52 +288,109 @@ public class ViewController implements Initializable {
     }
 
     /**
-     * Validate form inputs.
+     * Validate form inputs. Collects ALL errors and returns them as a single
+     * message.
      * 
-     * @return Error message string if invalid, null if valid.
+     * @return Error message string listing all errors, or null if all valid.
      */
     private String validateInput() {
+        List<String> errors = new ArrayList<>();
+
+        // --- Required text fields ---
         if (titleField.getText() == null || titleField.getText().trim().isEmpty()) {
-            return "Title is required.";
+            errors.add("- Title is required.");
         }
         if (authorField.getText() == null || authorField.getText().trim().isEmpty()) {
-            return "Author is required.";
+            errors.add("- Author is required.");
         }
         if (catField.getText() == null || catField.getText().trim().isEmpty()) {
-            return "Category is required.";
+            errors.add("- Category is required.");
         }
 
-        // Price validation
-        try {
-            double price = Double.parseDouble(priceField.getText().trim());
-            if (price < 0) {
-                return "Price must be a positive number.";
+        // --- Price validation ---
+        String priceText = (priceField.getText() == null) ? "" : priceField.getText().trim();
+        if (priceText.isEmpty()) {
+            errors.add("- Price is required.");
+        } else {
+            try {
+                double price = Double.parseDouble(priceText);
+                if (price < 0) {
+                    errors.add("- Price must be >= 0.");
+                }
+            } catch (NumberFormatException e) {
+                errors.add("- Price must be a valid number (e.g. 150000).");
             }
-        } catch (NumberFormatException e) {
-            return "Price must be a valid number.";
         }
 
-        // Quantity validation
-        try {
-            int qty = Integer.parseInt(qtyField.getText().trim());
-            if (qty < 0) {
-                return "Quantity must be a positive integer.";
+        // --- Quantity validation ---
+        String qtyText = (qtyField.getText() == null) ? "" : qtyField.getText().trim();
+        if (qtyText.isEmpty()) {
+            errors.add("- Quantity is required.");
+        } else {
+            try {
+                int qty = Integer.parseInt(qtyText);
+                if (qty < 0) {
+                    errors.add("- Quantity must be >= 0.");
+                }
+            } catch (NumberFormatException e) {
+                errors.add("- Quantity must be a valid integer (e.g. 10).");
             }
-        } catch (NumberFormatException e) {
-            return "Quantity must be a valid integer.";
         }
 
-        // Publish year validation
-        try {
-            int year = Integer.parseInt(pbField.getText().trim());
-            if (year < 1000 || year > 2100) {
-                return "Publish year must be between 1000 and 2100.";
+        // --- Publish year validation ---
+        String yearText = (pbField.getText() == null) ? "" : pbField.getText().trim();
+        if (yearText.isEmpty()) {
+            errors.add("- Publish Year is required.");
+        } else {
+            try {
+                int year = Integer.parseInt(yearText);
+                if (year < 1000 || year > 2100) {
+                    errors.add("- Publish Year must be between 1000 and 2100.");
+                }
+            } catch (NumberFormatException e) {
+                errors.add("- Publish Year must be a valid integer (e.g. 2024).");
             }
-        } catch (NumberFormatException e) {
-            return "Publish year must be a valid integer.";
         }
 
-        return null; // All valid
+        if (errors.isEmpty()) {
+            return null; // All valid
+        }
+        return "Please fix the following errors:\n" + String.join("\n", errors);
+    }
+
+    /**
+     * Validate a Book object (used for CSV import validation).
+     * 
+     * @param book   The book to validate
+     * @param rowNum The CSV row number (for error reporting)
+     * @return Error message if invalid, null if valid.
+     */
+    private String validateBook(Book book, int rowNum) {
+        List<String> errors = new ArrayList<>();
+
+        if (book.getTitle() == null || book.getTitle().trim().isEmpty()) {
+            errors.add("Title is empty");
+        }
+        if (book.getAuthor() == null || book.getAuthor().trim().isEmpty()) {
+            errors.add("Author is empty");
+        }
+        if (book.getCategory() == null || book.getCategory().trim().isEmpty()) {
+            errors.add("Category is empty");
+        }
+        if (book.getPrice() < 0) {
+            errors.add("Price is negative (" + book.getPrice() + ")");
+        }
+        if (book.getQuantity() < 0) {
+            errors.add("Quantity is negative (" + book.getQuantity() + ")");
+        }
+        if (book.getPublishYear() < 1000 || book.getPublishYear() > 2100) {
+            errors.add("Publish year invalid (" + book.getPublishYear() + ")");
+        }
+
+        if (errors.isEmpty()) {
+            return null;
+        }
+        return "Row " + rowNum + ": " + String.join(", ", errors) + ".";
     }
 
     /**
